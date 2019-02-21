@@ -13,7 +13,7 @@ def pickleLoad(filename):
 songs = pickleLoad('songList.pickle')
 
 
-w2v = Word2Vec(sg=1,  seed = 1,  size=20, window=8, min_count=1, workers=7)
+w2v = Word2Vec(sg=1,  seed = 1,  size=20, window=8, min_count=0, workers=2)
 w2v.build_vocab(songs)
 w2v.train(songs,  total_examples = w2v.corpus_count,  epochs = 100)
 pickleSave('w2v.pickle',w2v )

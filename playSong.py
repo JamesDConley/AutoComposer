@@ -22,7 +22,7 @@ def closestWord(vec):
 song = pickleLoad('song.pickle')
 music21.environment.set('musicxmlPath', '/usr/bin/musescore')
 s = stream.Stream()
-for vec in song[100:]:
+for vec in song:
     
     item = closestWord(vec)
     print(item)
@@ -32,6 +32,7 @@ for vec in song[100:]:
         s.append(chord.Chord(current_chord,  type='eighth'))
     else:
         print("Note")
-        s.append(note.Note(item,  type='eighth'))
+        if item != '0':
+            s.append(note.Note(item,  type='eighth'))
 docvariant = s.activateVariants('docvariants')
 s.show()

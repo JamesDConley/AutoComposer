@@ -1,7 +1,9 @@
 import pickle,  music21
 import numpy as np
-import random
+import random, os
 maxLen = 4006
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"#"1,2,3"
+import math
 def pickleSave(filename,  object):
     pickleOut = open('pickledObjects/' + filename,  'wb')
     pickle.dump(object,  pickleOut)
@@ -50,36 +52,47 @@ model = pickleLoad("kerasTrained.pickle")
 encoderDict = pickleLoad("oneHotDict.pickle")
 reverseEncoderDict = getReverseOneHotDict(encoderDict)
 inputData = pickleLoad('inputData.pickle')
-testInput = inputData[0][0:50]
+testInput = inputData[math.floor(random.uniform(0,1)*100)][0:50]
 print(testInput)
 song = list(testInput)
 #for i in range(100):
-#    seed = 2* np.random.random(20) - 1
+#    seeccccccd = 2* np.random.random(20) - 1
 #    song.append(closestVec(seed))
 
-for i in range(1000):
+for i in range(1):
     tempSong = np.array(padZeros(song,  maxLen)).reshape(1, maxLen, 20)
-    output = model.predict(tempSong)
-    model.reset_states()
+    outputSequence = model.predict(tempSong)
+    #model.reset_states()
     #for j in range(i+2):
     #    print(j)
     #    print(closestVec(output[0][j]))
-    maxItem = 0
-    maxVal = 0
-    count = 0
-    for item in output[0][i+1]:
-        if item > maxVal:
-            maxItem = count
-            maxVal = item
-        count+=1
-    print(maxItem)
-    cleanedOutput = [0]*len(output[0][i])
-    cleanedOutput[maxItem] = 1
-    newItem = w2v[reverseEncoderDict[str(cleanedOutput)]]
-    song.append(newItem)
-    #print(newItem)
-    #print(closestVec(output[0][i]))
-closestSong = []
-
+    
+    print(len(outputSequence))
+    for output in outputSequence[0]:
+        maxItem = 0
+        maxVal = 0
+        count = 0
+        cumulative = 0
+        randVal = random.uniform(0,1)
+        for item in output:
+            cumulative+=item
+            if len(output) < 163:
+                break
+            if cumulative > randVal:
+                maxItem = count
+                maxVal = item
+                print(maxItem, " with value ", maxVal)
+                break
+            count+=1
+        #print(maxItem)
+        cleanedOutput = [0]*len(output)
+        cleanedOutput[maxItem] = 1
+        if str(cleanedOutput) in reverseEncoderDict:
+            newItem = w2v[reverseEncoderDict[str(cleanedOutput)]]
+            if newItem != '0':
+            	song.append(newItem)
+        
+        #print(newItem)
+        #print(closestVec(output[0][i]))
 pickleSave('song.pickle', song )
 

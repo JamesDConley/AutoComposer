@@ -50,10 +50,12 @@ for song in songList:
     if len(song) > maxLen:
         maxLen = len(song)
 print(maxLen)
-for song in songList:
-    inputData.append(convertW2V(song[0:len(song)-1],  maxLen))
-    outputData.append(convertOneHot(song[1:], encoderDict,  maxLen))
-inputData = np.array(inputData).reshape(len(inputData), maxLen, 20)
+def songBatchGenerator(songList,batchSize):
+	start = 0
+	for song in songList:
+	    tempIData = (convertW2V(song[0:len(song)-1],  maxLen))
+	    tempOData = (convertOneHot(song[1:], encoderDict,  maxLen))
+	yield np.array(inputData),np.array(temp0Data)
 
 print(inputData.shape)
 print(len(outputData))
