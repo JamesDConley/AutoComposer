@@ -33,13 +33,13 @@ def getDict(songList):
 	allNotes = [item for song in songList for item in song]
 	encoderDict = makeOneHotEncodeDict(allNotes)
 	return encoderDict
-
+print("loading Songs")
 songList = p.load('songList')
 inputData = []
 outputData = []
-
+print("Buidling Dictionary")
 encoderDict = getDict(songList)
-
+print("Finding Maximum SongLength")
 maxLen = 0
 for song in songList:
     if len(song) > maxLen:
@@ -49,6 +49,7 @@ print(len(songList))
 		
 inputData = []
 outputData = []
+print("Building Datasets")
 for song in songList:
 	inputData.append(convertW2V(song[0:len(song)-1],  maxLen))
 	outputData.append(convertOneHot(song[1:], encoderDict,  maxLen))
@@ -56,6 +57,7 @@ otherLen = len(inputData[0][0])
 otherOLen = len(outputData[0])
 outputSize = len(outputData[0][0])
 print(outputSize)
+""" This code was for debugging to make sure all the data was formattted properly
 for item in inputData:
 	if len(item) == 4006:
 		for other in item:
@@ -71,11 +73,12 @@ for item in outputData:
 		for other in item:
 			if len(other) != outputSize:
 				print("IT BE BROKE IN HERE MAI DUDE")
+"""
 print("done")
 inputData = np.array(inputData).reshape(len(inputData), maxLen, 20)
 inputShape = (len(inputData[0]), len(inputData[0][0]))
 outputSize = len(outputData[0][0])
-
+print("Saving")
 p.save(encoderDict,'oneHotDict')
 p.save(inputShape, 'inputShape')
 p.save(outputSize,'outputSize')

@@ -20,9 +20,9 @@ for song in bachSongs:
     #This snippet for flattening based on a web tutorial
     for item in notes:
         if isinstance(item, note.Note):
-            currentSong.append(str(item.pitch))    #For melody I am recording octave information
+            currentSong.append(str(item.pitch)+":"+str(item.quarterLength))   #For melody I am recording octave information
         if isinstance(item,  chord.Chord):
-            currentSong.append('.'.join(str(n) for n in item.normalOrder))  #For harmony I am only recording the 12 tone values
+            currentSong.append('.'.join(str(n) for n in item.normalOrder)+":"+str(item.quarterLength))  #For harmony I am only recording the 12 tone values
     songs.append(currentSong)
 pickleSave('songList.pickle',  songs)
 print(songs[0:3])
