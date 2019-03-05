@@ -25,14 +25,16 @@ s = stream.Stream()
 for vec in song:
     
     item = closestWord(vec)
+    item, duration = item.split(':')
     print(item)
     if '.' in item:
         print("Chord")
+	
         current_chord = map(int, item.split('.'))
-        s.append(chord.Chord(current_chord,  type='eighth'))
-    else:
+        s.append(chord.Chord(current_chord,  quarterLength=float(duration)))
+    else :
         print("Note")
         if item != '0':
-            s.append(note.Note(item,  type='eighth'))
+            s.append(note.Note(item,  quarterLength=float(duration)))
 docvariant = s.activateVariants('docvariants')
 s.show()

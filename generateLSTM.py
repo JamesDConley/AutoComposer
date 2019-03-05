@@ -4,29 +4,21 @@ from keras.utils import multi_gpu_model
 from keras.optimizers import RMSprop
 from keras.activations import softmax
 import tensorflow as tf
-import keras
-import math
+import keras, math
 import numpy as np
-import pickle 
-import os, sys
-#os.environ["CUDA_VISIBLE_DEVICES"]="3"
+import pickle
+import os, sys, csv
+import ezPickle as p
+import time
+window_size = p.load('window_size')
+os.environ["CUDA_VISIBLE_DEVICES"]="1,2,3"
 keras.callbacks.TensorBoard(histogram_freq=0)
-def pickleSave(filename,  object):
-    pickleOut = open('pickledObjects/' + filename,  'wb')
-    pickle.dump(object,  pickleOut)
-    pickleOut.close()
 
-def pickleLoad(filename):
-    pickleIn = open('pickledObjects/' + filename,  'rb')
-    temp = pickle.load(pickleIn)
-    pickleIn.close()
-    return temp
-w2v = pickleLoad('w2v.pickle')
+w2v = p.load('w2v')
 def convertW2V(items,  padLength):
     l = []
     for item in items:
         l.append(w2v[item])
-        #print(w2v[item])
     for i in range(padLength - len(items)):
         l.append(list(np.zeros(20)))
     return l
@@ -37,97 +29,64 @@ def convertOneHot(items,  dict,  padLength):
     for i in range(padLength - len(items)):
         l.append(np.zeros(len(l[0])))
     return l
-def makeOneHotEncodeDict(corpus):
-    dict = {}
-    count = 0
-    for item in corpus:
-        if not str(item) in dict.keys():
-            dict[str(item)] = count
-            count+=1
-    for key in dict.keys():
-        dict[key] = [0]*dict[key] + [1] + ([0]*(count - dict[key]))
-    return dict
 
-def getDict(songList):
-	allNotes = [item for song in songList for item in song]
-	print(sys.getsizeof(allNotes))
-	encoderDict = makeOneHotEncodeDict(allNotes)
-	pickleSave('oneHotDict.pickle', encoderDict)
-	del allNotes
-	return encoderDict
-songList = pickleLoad('songList.pickle')[0:90]
-inputData = []
-outputData = []
-maxLen = 0
-
-encoderDict = getDict(songList)
-
-for song in songList:
-    if len(song) > maxLen:
-        maxLen = len(song)
-print(maxLen)
-print(len(songList))
-@profile
-def songBatchGenerator(songList,batchSize):
+encoderDict = p.load("oneHotDict")
+batch_size = 300
+output_size = p.load('outputSize')
+def songBatchGenerator(batch_size):
+	num_samples= p.load('numSamples')
 	start = 0
-	count = 0
+	current_line = 0
+	myfile = open('training_data.csv')
+	reader = csv.reader(myfile, delimiter=',')
 	while True:
-		end = start+batchSize
+		start = 0		
+		end = start+batch_size
 		i_d = []
 		o_d = []
-		if end > len(songList)-1:
-			end = len(songList)-1
-		tempList = songList[start:end]
-		for song in tempList:
-		    i_d.append(convertW2V(song[0:len(song)-1],  maxLen))
-		    o_d.append(convertOneHot(song[1:], encoderDict,  maxLen))
-		print("*************************")
-		print(count," ", start, " ", end)
-		print("*************************")
-		yield np.array(i_d),np.array(o_d)
-		start = end		
-		if start >= len(songList)-1:
-			start = 0		
-			
-		count+=1
 		
-		
+		myfile.seek(0)
+		current_line = 0 
+		for row in reader:
+			if current_line >= end:
+				#print(np.array(o_d)[0])
+				yield (np.array(i_d), np.array(o_d))
+				start = end
+				end = start+batch_size
+				i_d = []
+				o_d = []
+				if end > num_samples:
+					end = num_samples-1
+					
+			i_d.append(convertW2V(row[1:],window_size))
+			o_d.append(np.array(encoderDict[row[0]].copy()))
+			current_line+=1
 
-inputData = []
-outputData = []
-for song in songList[0:3]:
-	inputData.append(convertW2V(song[0:len(song)-1],  maxLen))
-	outputData.append(convertOneHot(song[1:], encoderDict,  maxLen))
-inputData = np.array(inputData).reshape(len(inputData), maxLen, 20)
-batch_size = 8
-
+print(output_size)
 def create_model():
 	model = Sequential()
-	model.add(Masking(mask_value=0., input_shape=(len(inputData[0]), len(inputData[0][0])) ))
-	model.add(LSTM(256,  return_sequences=True))
+	#model.add(Masking(mask_value=0.))
+	model.add(LSTM(256,  return_sequences=True, input_shape=p.load('inputShape')))
 	model.add(Dropout(.2))
 	model.add(LSTM(128, return_sequences=True))
 	model.add(Dropout(.2))
-	model.add(LSTM(128, return_sequences=True))
+	model.add(LSTM(128, return_sequences=False))
 	model.add(Dropout(.2))
-	model.add(Dense(len(outputData[0][0]),  activation='softmax'))
+	model.add(Dense(output_size,  activation='softmax'))
 	return model
-#print(len(inputData[0]))
-#print(len(inputData[0][0]))
-#print(len(outputData[0][0]))
+
 with tf.device("/cpu:0"):
      model = create_model()
 
 # make the model parallel
-p_model = multi_gpu_model(model, gpus=4)
+p_model = multi_gpu_model(model, gpus=3)
 rms = RMSprop()
-#p_model = multi_gpu_model(model, gpus=4)
 
 p_model.compile(loss='categorical_crossentropy',optimizer=rms, metrics=['categorical_accuracy'])
 
 print("Fitting")
-
-p_model.fit_generator(songBatchGenerator(songList,batch_size), epochs=100,  verbose=1,  shuffle=False, steps_per_epoch=math.ceil(len(songList)/batch_size))
-pickleSave('kerasTrained.pickle', p_model)
+num_samples = p.load('numSamples')
+p_model.fit_generator(songBatchGenerator(batch_size), epochs=200,  verbose=1,  shuffle=False, steps_per_epoch=math.ceil(num_samples/batch_size))
+p.save( p_model,'kerasTrained')
 print("Saved")
 

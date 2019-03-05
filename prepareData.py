@@ -2,7 +2,7 @@ import math
 import numpy as np
 import ezPickle as p
 w2v = p.load('w2v')
-
+size = p.load('size')
 def convertW2V(items,  padLength):
     l = []
     for item in items:
@@ -26,7 +26,9 @@ def makeOneHotEncodeDict(corpus):
             dict[str(item)] = count
             count+=1
     for key in dict.keys():
-        dict[key] = [0]*dict[key] + [1] + ([0]*(count - dict[key]))
+        my_list = [0]*count
+        my_list[dict[key]] = 1
+        dict[key] = my_list
     return dict
 
 def getDict(songList):
@@ -49,39 +51,26 @@ print(len(songList))
 		
 inputData = []
 outputData = []
-print("Building Datasets")
-for song in songList:
-	inputData.append(convertW2V(song[0:len(song)-1],  maxLen))
-	outputData.append(convertOneHot(song[1:], encoderDict,  maxLen))
-otherLen = len(inputData[0][0])
-otherOLen = len(outputData[0])
-outputSize = len(outputData[0][0])
-print(outputSize)
-""" This code was for debugging to make sure all the data was formattted properly
-for item in inputData:
-	if len(item) == 4006:
-		for other in item:
-			if len(other) != otherLen:
-				print("IT DONE BROOPKE")
-	else:
-		print("OH BOI IT REAL BROKE")
-for item in outputData:
-	if len(item) != otherOLen:
-		print("OH MAN EY BROKE EY DID BAD")
-		print(len(item))
-	else:
-		for other in item:
-			if len(other) != outputSize:
-				print("IT BE BROKE IN HERE MAI DUDE")
-"""
+window_size = 100
+print("Writing Data")
+import csv
+data_file = open('training_data.csv',mode='w')
+file_writer = csv.writer(data_file, delimiter=',')
+num_samples = 0
+for song in [item for item in songList if len(item) > window_size]:
+	for i in range(0,len(song)-window_size):
+		file_writer.writerow([song[i+window_size]] + song[i:i+window_size])
+		num_samples+=1
+
 print("done")
 inputData = np.array(inputData).reshape(len(inputData), maxLen, 20)
-inputShape = (len(inputData[0]), len(inputData[0][0]))
-outputSize = len(outputData[0][0])
+inputShape = (window_size, size)
+outputSize = len(encoderDict.keys())
 print("Saving")
 p.save(encoderDict,'oneHotDict')
 p.save(inputShape, 'inputShape')
 p.save(outputSize,'outputSize')
-p.save(maxLen,'maxLen')
+p.save(num_samples,'numSamples')
+p.save(window_size,'window_size')
 
 

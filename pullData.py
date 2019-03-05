@@ -9,13 +9,17 @@ def pickleLoad(filename):
     temp = pickle.load(pickleIn)
     pickleIn.close()
     return temp
-from music21 import corpus,  note,  chord
+from music21 import corpus,  note,  chord, instrument
 bachSongs = corpus.getComposer('bach')
 print(len(bachSongs))
 songs = []
 for song in bachSongs:
     song = corpus.parse(song)
-    notes = song.flat.notes
+    parts = instrument.partitionByInstrument(song)
+    if parts:
+        notes = parts.parts[0].recurse()
+    else:
+        notes = song.flat.notes
     currentSong = []
     #This snippet for flattening based on a web tutorial
     for item in notes:
@@ -25,5 +29,5 @@ for song in bachSongs:
             currentSong.append('.'.join(str(n) for n in item.normalOrder)+":"+str(item.quarterLength))  #For harmony I am only recording the 12 tone values
     songs.append(currentSong)
 pickleSave('songList.pickle',  songs)
-print(songs[0:3])
+#print(songs[0:3])
             

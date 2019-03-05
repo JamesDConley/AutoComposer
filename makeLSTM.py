@@ -11,7 +11,7 @@ import os
 import time
 keras.callbacks.TensorBoard(histogram_freq=0)
 w2v =p.load('w2v')
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"#"1,2,3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1,2,3"
 def convertW2V(items,  padLength):
     l = []
     for item in items:
@@ -91,13 +91,13 @@ def create_model():
 model = create_model()
 
 # make the model parallel
-#p_model = multi_gpu_model(model, gpus=3)
+p_model = multi_gpu_model(model, gpus=3)
 rms = RMSprop()
 try:
 	model.compile(loss='categorical_crossentropy',optimizer=rms, metrics=['categorical_accuracy'])
 
 	print("Fitting")
-	batch_size = 12
+	batch_size = 3
 	epochs = 100
 	songList = p.load('songList')
 	#model.fit_generator(songBatchGenerator(songList,batch_size), epochs=10,  verbose=1,  shuffle=False, steps_per_epoch=math.ceil(len(songList)/batch_size),max_queue_size=2)
