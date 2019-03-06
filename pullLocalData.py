@@ -23,6 +23,6 @@ for file in glob.glob("songs/*.mid"):
                 if isinstance(item,  chord.Chord):
                         currentSong.append('.'.join(str(n) for n in item.normalOrder)+":"+str(item.quarterLength))  #For harmony I am only recording the 12 tone values
         songs.append(currentSong)
-p.save(songs,'songList.pickle')
+p.save(songs,'songList')
 #print(songs[0:3])   
                 

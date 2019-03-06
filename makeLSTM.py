@@ -11,7 +11,7 @@ import os
 import time
 keras.callbacks.TensorBoard(histogram_freq=0)
 w2v =p.load('w2v')
-os.environ["CUDA_VISIBLE_DEVICES"] = "1,2,3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1,3"
 def convertW2V(items,  padLength):
     l = []
     for item in items:

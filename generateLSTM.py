@@ -31,7 +31,7 @@ def convertOneHot(items,  dict,  padLength):
     return l
 
 encoderDict = p.load("oneHotDict")
-batch_size = 300
+batch_size = 100
 output_size = p.load('outputSize')
 def songBatchGenerator(batch_size):
 	num_samples= p.load('numSamples')
@@ -79,14 +79,15 @@ with tf.device("/cpu:0"):
      model = create_model()
 
 # make the model parallel
-p_model = multi_gpu_model(model, gpus=3)
+#p_model = multi_gpu_model(model, gpus=2)
+p_model = model
 rms = RMSprop()
 
 p_model.compile(loss='categorical_crossentropy',optimizer=rms, metrics=['categorical_accuracy'])
 
 print("Fitting")
 num_samples = p.load('numSamples')
-p_model.fit_generator(songBatchGenerator(batch_size), epochs=200,  verbose=1,  shuffle=False, steps_per_epoch=math.ceil(num_samples/batch_size))
+p_model.fit_generator(songBatchGenerator(batch_size), epochs=300,  verbose=1,  shuffle=False, steps_per_epoch=math.ceil(num_samples/batch_size))
 p.save( p_model,'kerasTrained')
 print("Saved")
 
