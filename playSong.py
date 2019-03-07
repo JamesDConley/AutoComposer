@@ -31,10 +31,12 @@ for vec in song:
         print("Chord")
 	
         current_chord = map(int, item.split('.'))
-        s.append(chord.Chord(current_chord,  quarterLength=float(duration)))
+        s.append(chord.Chord(current_chord,  quarterLength=float(eval(duration))))
     else :
         print("Note")
-        if item != '0':
+        if len(item) > 1:
             s.append(note.Note(item,  quarterLength=float(duration)))
+        #else:
+        #    s.append(note.Note(
 docvariant = s.activateVariants('docvariants')
 s.show()
